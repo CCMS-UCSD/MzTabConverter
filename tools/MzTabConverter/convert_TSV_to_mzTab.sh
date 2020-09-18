@@ -253,7 +253,7 @@ if [ ! -z "$msgf_pep_qvalue" ]; then
     extended_parameters="$extended_parameters -msgf_pep_qvalue '$msgf_pep_qvalue'"
 fi
 
-if [ "$skip" -ne 1 ]; then
+if [ "${skip:=0}" -ne 1 ]; then
   # generate conversion parameter file
   echo "----------"
   command="java -Xmx$config_Xmx -cp $MZTAB_UTILS_JAR edu.ucsd.mztab.TSVToMzTabParamGenerator -tsv '$tsv_file' -params '$params_xml_file' -output '$config_file' -header_line '$header_line' -filename '$filename' -modified_sequence '$modified_sequence'$extended_parameters"
