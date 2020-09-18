@@ -9,7 +9,7 @@ DEFAULT_CONVERT_XMX="2G"
 mod_patterns=()
 fixed_mods=()
 variable_mods=()
-options=$(getopt -a -o "" -l config_Xmx:,tsv:,params:,config_directory:,header_line:,filename:,modified_sequence:,mod_pattern:,fixed_mod:,variable_mod:,fixed_mods_reported:,match_mass_precision:,match_mass_difference:,spectrum_id_type:,scan:,index:,index_numbering:,accession:,charge:,exp_mass_to_charge:,calc_mass_to_charge:,msgf_evalue:,msgf_spec_evalue:,msgf_qvalue:,msgf_pep_qvalue:,convert_Xmx:,raw_mzTab_directory: -- "$@")
+options=$(getopt -a -o "" -l config_Xmx:,tsv:,params:,config_directory:,header_line:,filename:,modified_sequence:,mod_pattern:,fixed_mod:,variable_mod:,fixed_mods_reported:,match_mass_precision:,match_mass_difference:,spectrum_id_type:,scan:,index:,index_numbering:,accession:,charge:,exp_mass_to_charge:,calc_mass_to_charge:,msgf_evalue:,msgf_spec_evalue:,msgf_qvalue:,msgf_pep_qvalue:,convert_Xmx:,raw_mzTab_directory:,skip: -- "$@")
 eval set -- "$options"
 while true; do
     case "$1" in
@@ -120,6 +120,10 @@ while true; do
     --raw_mzTab_directory)
         shift;
         raw_mzTab_directory=$1
+        ;;
+    --skip)
+        shift;
+        skip=$1
         ;;
     --)
         shift
@@ -249,38 +253,40 @@ if [ ! -z "$msgf_pep_qvalue" ]; then
     extended_parameters="$extended_parameters -msgf_pep_qvalue '$msgf_pep_qvalue'"
 fi
 
-# generate conversion parameter file
-echo "----------"
-command="java -Xmx$config_Xmx -cp $MZTAB_UTILS_JAR edu.ucsd.mztab.TSVToMzTabParamGenerator -tsv '$tsv_file' -params '$params_xml_file' -output '$config_file' -header_line '$header_line' -filename '$filename' -modified_sequence '$modified_sequence'$extended_parameters"
-echo "createConvertConfig command: [$command]"
-echo "----------"
-eval $command
-status=$?
-if [ "$status" -ne 0 ]; then
-    echo "createConvertConfig command failed with exit code [$status]."
-    exit $status
-fi
-echo ""
+if [ "${skip:=0}" -ne 1 ]; then
+  # generate conversion parameter file
+  echo "----------"
+  command="java -Xmx$config_Xmx -cp $MZTAB_UTILS_JAR edu.ucsd.mztab.TSVToMzTabParamGenerator -tsv '$tsv_file' -params '$params_xml_file' -output '$config_file' -header_line '$header_line' -filename '$filename' -modified_sequence '$modified_sequence'$extended_parameters"
+  echo "createConvertConfig command: [$command]"
+  echo "----------"
+  eval $command
+  status=$?
+  if [ "$status" -ne 0 ]; then
+      echo "createConvertConfig command failed with exit code [$status]."
+      exit $status
+  fi
+  echo ""
 
-# ensure TSV to mzTab conversion directory exists
-if [ ! -d "$raw_mzTab_directory" ]; then
-    mkdir -p "$raw_mzTab_directory"
-    status=$?
-    if [ "$status" -ne 0 ]; then
-        echo "convertTSVToMzTab directory mkdir command failed with exit code [$status]."
-        exit $status
-    fi
-fi
+  # ensure TSV to mzTab conversion directory exists
+  if [ ! -d "$raw_mzTab_directory" ]; then
+      mkdir -p "$raw_mzTab_directory"
+      status=$?
+      if [ "$status" -ne 0 ]; then
+          echo "convertTSVToMzTab directory mkdir command failed with exit code [$status]."
+          exit $status
+      fi
+  fi
 
-# convert TSV to mzTab
-echo "----------"
-command="java -Xmx$convert_Xmx -cp $MZTAB_UTILS_JAR edu.ucsd.mztab.TSVToMzTabConverter -tsv '$tsv_file' -params '$config_file' -mzTab '$raw_mzTab_directory'"
-echo "convertTSVToMzTab command: [$command]"
-echo "----------"
-eval $command
-status=$?
-if [ "$status" -ne 0 ]; then
-    echo "convertTSVToMzTab command failed with exit code [$status]."
-    exit $status
+  # convert TSV to mzTab
+  echo "----------"
+  command="java -Xmx$convert_Xmx -cp $MZTAB_UTILS_JAR edu.ucsd.mztab.TSVToMzTabConverter -tsv '$tsv_file' -params '$config_file' -mzTab '$raw_mzTab_directory'"
+  echo "convertTSVToMzTab command: [$command]"
+  echo "----------"
+  eval $command
+  status=$?
+  if [ "$status" -ne 0 ]; then
+      echo "convertTSVToMzTab command failed with exit code [$status]."
+      exit $status
+  fi
+  echo ""
 fi
-echo ""
