@@ -29,10 +29,23 @@ else
     exit 1
 fi
 
+# verify errors directory (optional)
+if [ $# -ge 3 ]; then
+    errors=${3%/}
+    if [ ! -d "$errors" ]; then
+        mkdir "$errors"
+    fi
+fi
+
 # extract input file's base name and extension
 filename="${input##*/}"
 base="${filename%.*}"
 extension="${filename##*.}"
+# set up error file
+unset error_file
+if [ ! -z "$errors" ]; then
+    error_file="$errors/$filename"
+fi
 # extract input file's collection directory
 collection=`readlink -f $input | xargs -I {} dirname "{}"`
 # extract input file's top-level task directory
@@ -82,15 +95,23 @@ elif [[ "$lower_case_extension" == "mzid" || "$lower_case_extension" == "xml" ]]
     # remove scratch input file
     echo "Deleting scratch input file [$scratch_input]."
     rm "$scratch_input"
-    # if the conversion failed, pass that exit code
+    # if the conversion failed, report error
     if [ $status -ne 0 ]; then
         echo "Conversion failed: converter returned exit code $status"
-        exit $status
+        if [ ! -z "$error_file" ]; then
+            echo "$filename: File could not be converted to mzTab format." > "$error_file"
+        else
+            exit 1
+        fi
     fi
-# otherwise, input file is of an unsupported format, so fail
+# otherwise, input file is of an unsupported format, so report error
 else
     echo "ERROR: Input file [$input] has unsupported format [.$extension]."
-    exit 1
+    if [ ! -z "$error_file" ]; then
+        echo "$filename: File has unsupported format [.$extension]." > "$error_file"
+    else
+        exit 1
+    fi
 fi
 
 exit
