@@ -44,7 +44,7 @@ extension="${filename##*.}"
 # set up error file
 unset error_file
 if [ ! -z "$errors" ]; then
-    error_file="$errors/$base.err"
+    error_file="$errors/$filename"
 fi
 # extract input file's collection directory
 collection=`readlink -f $input | xargs -I {} dirname "{}"`
