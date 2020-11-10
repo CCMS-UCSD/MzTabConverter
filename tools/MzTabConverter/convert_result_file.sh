@@ -99,7 +99,7 @@ elif [[ "$lower_case_extension" == "mzid" || "$lower_case_extension" == "xml" ]]
     if [ $status -ne 0 ]; then
         echo "Conversion failed: converter returned exit code $status"
         if [ ! -z "$error_file" ]; then
-            echo "Result file [$input] could not be converted to mzTab format." > "$error_file"
+            echo "$filename: File could not be converted to mzTab format." > "$error_file"
         else
             exit 1
         fi
@@ -108,7 +108,7 @@ elif [[ "$lower_case_extension" == "mzid" || "$lower_case_extension" == "xml" ]]
 else
     echo "ERROR: Input file [$input] has unsupported format [.$extension]."
     if [ ! -z "$error_file" ]; then
-        echo "Result file [$input] has unsupported format [.$extension]." > "$error_file"
+        echo "$filename: File has unsupported format [.$extension]." > "$error_file"
     else
         exit 1
     fi
